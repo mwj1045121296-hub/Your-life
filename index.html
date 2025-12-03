@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>留学生生活统计可视化 | Multilingual Dark</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+                   "Helvetica Neue", Arial, "Noto Sans CJK SC",
+                   "Malgun Gothic", sans-serif;
+      /* 深色科技背景 */
+      background:
+        radial-gradient(circle at 0% 0%, #1e293b 0, #020617 45%),
+        radial-gradient(circle at 100% 100%, #0f172a 0, #020617 55%);
+      color: #e5e7eb;
+      min-height: 100vh;
+    }
+
+    header {
+      position: relative;
+      padding: 22px 30px 26px;
+      overflow: hidden;
+      background: radial-gradient(circle at 0% 0%, #4f46e5 0, #111827 50%);
+      border-bottom: 1px solid rgba(148, 163, 184, 0.4);
+    }
+
+    /* 背景装饰线条 */
+    header::before {
+      content: "";
+      position: absolute;
+      inset: -120px;
+      background:
+        radial-gradient(circle at 10% 20%, rgba(129, 140, 248, 0.55) 0, transparent 45%),
+        radial-gradient(circle at 90% 80%, rgba(34, 197, 94, 0.4) 0, transparent 50%);
+      opacity: 0.8;
+      pointer-events: none;
+    }
+    header::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(120deg, rgba(15, 23, 42, 0.4), transparent),
+        linear-gradient(300deg, rgba(15, 23, 42, 0.7), transparent);
+      pointer-events: none;
+    }
+
+    header > * {
+      position: relative;
+      z-index: 1;
+    }
+
+    header h1 {
+      margin: 0 0 6px;
+      font-size: 26px;
+      letter-spacing: 0.03em;
+    }
+
+    header p {
+      margin: 0;
+      font-size: 14px;
+      opacity: 0.92;
+    }
+
+    .lang-switch {
+      position: absolute;
+      top: 18px;
+      right: 26px;
+      display: flex;
+      gap: 8px;
+      z-index: 2;
+    }
+
+    .lang-switch button {
+      border: 1px solid rgba(148, 163, 184, 0.6);
+      background: rgba(15, 23, 42, 0.65);
+      color: #e5e7eb;
+      padding: 5px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.2s ease-out;
+      backdrop-filter: blur(10px);
+    }
+
+    .lang-switch button:hover {
+      transform: translateY(-1px);
+      background: rgba(30, 64, 175, 0.9);
+      border-color: rgba(191, 219, 254, 0.9);
+      box-shadow: 0 8px 18px rgba(37, 99, 235, 0.45);
+    }
+
+    main {
+      max-width: 1100px;
+      margin: 22px auto 40px;
+      padding: 0 16px;
+    }
+
+    .card {
+      position: relative;
+      background: radial-gradient(circle at 0 0, rgba(148, 163, 184, 0.22), transparent 50%),
+                  rgba(15, 23, 42, 0.88);
+      border-radius: 14px;
+      padding: 16px 20px 18px;
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      box-shadow:
+        0 18px 40px rgba(15, 23, 42, 0.95),
+        0 0 0 1px rgba(15, 23, 42, 0.6);
+      margin-bottom: 18px;
+      backdrop-filter: blur(14px);
+      transition: transform 0.18s ease-out, box-shadow 0.18s ease-out,
+                  border-color 0.18s ease-out, background 0.18s ease-out;
+    }
+
+    .card:hover {
+      transform: translateY(-3px);
+      box-shadow:
+        0 24px 55px rgba(15, 23, 42, 0.98),
+        0 0 0 1px rgba(56, 189, 248, 0.35);
+      border-color: rgba(96, 165, 250, 0.7);
+      background: radial-gradient(circle at 0 0, rgba(129, 140, 248, 0.32), transparent 55%),
+                  rgba(15, 23, 42, 0.93);
+    }
+
+    h2 {
+      margin-top: 0;
+      font-size: 18px;
+      letter-spacing: 0.02em;
+      color: #e5e7eb;
+    }
+
+    label {
+      font-weight: 600;
+      font-size: 13px;
+      color: #cbd5f5;
+      margin-right: 4px;
+    }
+
+    select {
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.8);
+      background: rgba(15, 23, 42, 0.8);
+      color: #e5e7eb;
+      font-size: 13px;
+      outline: none;
+      min-width: 180px;
+      transition: border-color 0.18s ease-out, box-shadow 0.18s ease-out, background 0.18s;
+    }
+
+    select:focus {
+      border-color: rgba(59, 130, 246, 1);
+      box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.7);
+      background: rgba(15, 23, 42, 0.95);
+    }
+
+    option {
+      background: #020617;
+      color: #e5e7eb;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px 18px;
+      align-items: center;
+      font-size: 14px;
+    }
+
+    .badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-left: auto;
+    }
+
+    .badges span {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(15, 23, 42, 0.9);
+      color: #a5b4fc;
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 11px;
+      border: 1px solid rgba(129, 140, 248, 0.6);
+      white-space: nowrap;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 12px;
+      margin-top: 10px;
+    }
+
+    .stat-box {
+      background: radial-gradient(circle at 100% 0, rgba(103, 232, 249, 0.2), transparent 55%),
+                  rgba(15, 23, 42, 0.9);
+      border-radius: 12px;
+      padding: 10px 12px 11px;
+      border: 1px solid rgba(148, 163, 184, 0.6);
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: #9ca3af;
+      margin-bottom: 4px;
+    }
+
+    .stat-value {
+      font-size: 19px;
+      font-weight: 700;
+      color: #e5e7eb;
+    }
+
+    .stat-note {
+      font-size: 11px;
+      color: #9ca3af;
+      margin-top: 3px;
+    }
+
+    #interpretation {
+      font-size: 13px;
+      line-height: 1.7;
+      margin-top: 8px;
+      color: #d1d5db;
+    }
+
+    #interpretation strong {
+      color: #a5b4fc;
+    }
+
+    p {
+      margin: 6px 0;
+    }
+
+    footer {
+      max-width: 1100px;
+      margin: 0 auto 22px;
+      padding: 0 16px;
+      font-size: 11px;
+      color: #9ca3af;
+      text-align: right;
+    }
+
+    @media (max-width: 720px) {
+      header {
+        padding: 18px 16px 22px;
+      }
+      .lang-switch {
+        position: static;
+        margin-bottom: 10px;
+        justify-content: flex-end;
+      }
+      header h1 {
+        font-size: 22px;
+      }
+      .controls {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .badges {
+        margin-left: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+<header>
+  <div class="lang-switch">
+    <button onclick="setLang('zh')">🇨🇳 <span>中文</span></button>
+    <button onclick="setLang('en')">🇬🇧 <span>English</span></button>
+    <button onclick="setLang('kr')">🇰🇷 <span>한국어</span></button>
+  </div>
+
+  <h1 id="title">中韩留学生生活差异统计可视化</h1>
+  <p id="subtitle">
+    示例数据：展示中国留学生与韩国留学生、男女生在韩国生活中的行为差异。
+  </p>
+</header>
+
+<main>
+  <!-- 控件 -->
+  <section class="card">
+    <div class="controls">
+      <div>
+        <label id="labelDimension" for="dimensionSelect">比较维度：</label>
+        <select id="dimensionSelect">
+          <option value="country">国籍（中国 vs 韩国）</option>
+          <option value="gender">性别（男 vs 女）</option>
+        </select>
+      </div>
+
+      <div>
+        <label id="labelMetric" for="metricSelect">指标：</label>
+        <select id="metricSelect">
+          <option value="steps">每日步数</option>
+          <option value="study">每日学习时间</option>
+          <option value="food">每月餐饮支出</option>
+          <option value="sleep">每日睡眠时间</option>
+          <option value="happiness">主观幸福感</option>
+        </select>
+      </div>
+
+      <div class="badges">
+        <span id="badge1">统计：均值比较</span>
+        <span id="badge2">可视化：柱状图</span>
+        <span id="badge3">样本：n≈40–50</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 图表 -->
+  <section class="card">
+    <h2 id="chartTitle">图表：均值对比</h2>
+    <canvas id="statsChart" height="140"></canvas>
+    <div id="interpretation"></div>
+  </section>
+
+  <!-- 统计摘要 -->
+  <section class="card">
+    <h2 id="statSummary">统计摘要</h2>
+    <div class="grid">
+      <div class="stat-box">
+        <div class="stat-label" id="groupALabel"></div>
+        <div class="stat-value" id="groupAValue"></div>
+        <div class="stat-note" id="groupANote"></div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label" id="groupBLabel"></div>
+        <div class="stat-value" id="groupBValue"></div>
+        <div class="stat-note" id="groupBNote"></div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label" id="labelDiff">差异（A − B）</div>
+        <div class="stat-value" id="diffValue"></div>
+        <div class="stat-note" id="diffNote"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 研究背景 -->
+  <section class="card">
+    <h2 id="sectionBackground">研究背景与说明</h2>
+    <p id="backgroundText" style="font-size:13px;line-height:1.8;">
+      本网站基于假想的问卷数据，模拟展示“中韩留学生在韩国的生活差异”。<br>
+      通过选择不同的比较维度（国籍 / 性别）与指标（步数、学习时间、餐饮支出、睡眠、幸福感），
+      网站会动态更新每一组的<strong>平均值（mean）</strong>、样本量以及两组之间的<strong>差异</strong>，
+      并以图表形式呈现，方便教师和同学直观理解统计结果。
+    </p>
+  </section>
+</main>
+
+<footer id="footerNote">
+  本页面的数字为示例数据，可替换为你自己问卷获得的真实数据。
+</footer>
+
+<!-- 多语言文本 -->
+<script>
+  const LANG = {
+    zh: {
+      title: "中韩留学生生活差异统计可视化",
+      subtitle: "示例数据：展示中国留学生与韩国留学生、男女生在韩国生活中的行为差异。",
+      dimension: "比较维度：",
+      metric: "指标：",
+      badges: ["统计：均值比较", "可视化：柱状图", "样本：n≈40–50"],
+      chartTitle: "图表：均值对比",
+      statSummary: "统计摘要",
+      diff: "差异（A − B）",
+      backgroundTitle: "研究背景与说明",
+      backgroundText:
+        "本网站基于假想的问卷数据，模拟展示“中韩留学生在韩国的生活差异”。通过选择不同的比较维度（国籍 / 性别）与指标（步数、学习时间、餐饮支出、睡眠、幸福感），网站会动态更新每一组的平均值、样本量以及两组之间的差异，并以图表形式呈现，方便教师和同学直观理解统计结果。",
+      footer: "本页面的数字为示例数据，可替换为你自己问卷获得的真实数据。"
+    },
+    en: {
+      title: "Lifestyle Statistics: Chinese vs Korean Students",
+      subtitle: "Sample data comparing lifestyles of Chinese & Korean students (and male vs female) in Korea.",
+      dimension: "Dimension:",
+      metric: "Metric:",
+      badges: ["Stats: Mean Comparison", "Vis: Bar Chart", "Sample: n≈40–50"],
+      chartTitle: "Chart: Mean Comparison",
+      statSummary: "Statistical Summary",
+      diff: "Difference (A − B)",
+      backgroundTitle: "Background & Notes",
+      backgroundText:
+        "This website uses hypothetical survey data to visualize lifestyle differences between groups of students in Korea. By switching dimensions (nationality / gender) and metrics (steps, study time, food cost, sleep, happiness), the page updates group means, sample sizes, and differences, helping viewers understand statistical results more intuitively.",
+      footer: "All numbers here are sample data. You can replace them with real survey results."
+    },
+    kr: {
+      title: "중·한 유학생 생활 통계 시각화",
+      subtitle: "예시 설문 데이터를 바탕으로 한국에 있는 중국·한국 유학생, 남녀 학생의 생활 차이를 비교합니다.",
+      dimension: "비교 기준:",
+      metric: "지표:",
+      badges: ["통계: 평균 비교", "시각화: 막대그래프", "표본: n≈40–50"],
+      chartTitle: "그래프: 평균 비교",
+      statSummary: "통계 요약",
+      diff: "차이 (A − B)",
+      backgroundTitle: "연구 배경 및 설명",
+      backgroundText:
+        "이 웹페이지는 가상의 설문 데이터를 활용하여 한국에 있는 중·한 유학생들의 생활 차이를 시각화합니다. 국적/성별과 같은 비교 기준과 걸음 수, 공부 시간, 식비, 수면 시간, 행복감 등의 지표를 선택하면 각 집단의 평균과 표본 수, 차이가 동적으로 갱신되어 통계 결과를 직관적으로 이해할 수 있습니다.",
+      footer: "모든 수치는 예시 데이터이며, 실제 설문으로 얻은 데이터로 대체하여 사용할 수 있습니다."
+    }
+  };
+
+  let currentLang = "zh";
+
+  function setLang(code) {
+    currentLang = code;
+    const t = LANG[code];
+
+    document.getElementById("title").innerText = t.title;
+    document.getElementById("subtitle").innerText = t.subtitle;
+    document.getElementById("labelDimension").innerText = t.dimension;
+    document.getElementById("labelMetric").innerText = t.metric;
+    document.getElementById("badge1").innerText = t.badges[0];
+    document.getElementById("badge2").innerText = t.badges[1];
+    document.getElementById("badge3").innerText = t.badges[2];
+    document.getElementById("chartTitle").innerText = t.chartTitle;
+    document.getElementById("statSummary").innerText = t.statSummary;
+    document.getElementById("labelDiff").innerText = t.diff;
+    document.getElementById("sectionBackground").innerText = t.backgroundTitle;
+    document.getElementById("backgroundText").innerText = t.backgroundText;
+    document.getElementById("footerNote").innerText = t.footer;
+  }
+</script>
+
+<!-- 统计数据 + 图表逻辑 -->
+<script>
+  const stats = {
+    country: {
+      groups: ["中国留学生", "韩国留学生"],
+      sampleSizes: [22, 21],
+      metrics: {
+        steps: { label: "每日步数", unit: "步", values: [12000, 9000] },
+        study: { label: "每日学习时间", unit: "小时", values: [4.5, 5.2] },
+        food: { label: "每月餐饮支出", unit: "元", values: [1600, 1900] },
+        sleep: { label: "每日睡眠时间", unit: "小时", values: [6.8, 7.3] },
+        happiness: { label: "主观幸福感", unit: "分", values: [7.1, 7.8] }
+      }
+    },
+    gender: {
+      groups: ["男生", "女生"],
+      sampleSizes: [20, 23],
+      metrics: {
+        steps: { label: "每日步数", unit: "步", values: [11000, 10500] },
+        study: { label: "每日学习时间", unit: "小时", values: [4.0, 5.1] },
+        food: { label: "每月餐饮支出", unit: "元", values: [1900, 1550] },
+        sleep: { label: "每日睡眠时间", unit: "小时", values: [6.5, 7.2] },
+        happiness: { label: "主观幸福感", unit: "分", values: [6.9, 7.6] }
+      }
+    }
+  };
+
+  function fmt(n) {
+    return Number.isInteger(n) ? n : n.toFixed(1);
+  }
+
+  let chart;
+
+  function updateDashboard() {
+    const dimKey = document.getElementById("dimensionSelect").value;
+    const metricKey = document.getElementById("metricSelect").value;
+
+    const dim = stats[dimKey];
+    const metric = dim.metrics[metricKey];
+
+    const [A, B] = dim.groups;
+    const [vA, vB] = metric.values;
+    const [nA, nB] = dim.sampleSizes;
+
+    const diff = vA - vB;
+
+    document.getElementById("groupALabel").innerText = A;
+    document.getElementById("groupAValue").innerText = `${fmt(vA)} ${metric.unit}`;
+    document.getElementById("groupANote").innerText = `n = ${nA}`;
+
+    document.getElementById("groupBLabel").innerText = B;
+    document.getElementById("groupBValue").innerText = `${fmt(vB)} ${metric.unit}`;
+    document.getElementById("groupBNote").innerText = `n = ${nB}`;
+
+    document.getElementById("diffValue").innerText =
+      (diff > 0 ? "+" : "") + fmt(diff) + " " + metric.unit;
+    document.getElementById("diffNote").innerText =
+      diff > 0 ? `${A} 高于 ${B}` : diff < 0 ? `${A} 低于 ${B}` : "两组均值几乎相同";
+
+    const interpret = `
+      <p><strong>当前指标：</strong>${metric.label}</p>
+      <p>${A} 的平均值约为 <strong>${fmt(vA)} ${metric.unit}</strong>，${B} 的平均值约为 <strong>${fmt(vB)} ${metric.unit}</strong>。</p>
+      <p>差异（A − B） = <strong>${fmt(diff)} ${metric.unit}</strong>。在正式的统计分析中，可以进一步使用 t 检验或置信区间来判断这一差异是否具有统计显著性。</p>
+    `;
+    document.getElementById("interpretation").innerHTML = interpret;
+
+    const data = {
+      labels: [A, B],
+      datasets: [
+        {
+          label: `${metric.label}（${metric.unit}）`,
+          data: [vA, vB],
+          backgroundColor: ["rgba(129, 140, 248, 0.9)", "rgba(45, 212, 191, 0.9)"],
+          borderRadius: 9
+        }
+      ]
+    };
+
+    const ctx = document.getElementById("statsChart").getContext("2d");
+
+    if (chart) {
+      chart.data = data;
+      chart.update();
+    } else {
+      chart = new Chart(ctx, {
+        type: "bar",
+        data,
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              display: false,
+              labels: { color: "#e5e7eb" }
+            },
+            title: {
+              display: false
+            }
+          },
+          scales: {
+            x: {
+              ticks: { color: "#e5e7eb" },
+              grid: {
+                display: false
+              }
+            },
+            y: {
+              beginAtZero: true,
+              ticks: { color: "#e5e7eb" },
+              grid: {
+                color: "rgba(148, 163, 184, 0.3)"
+              }
+            }
+          }
+        }
+      });
+    }
+  }
+
+  document.getElementById("dimensionSelect").addEventListener("change", updateDashboard);
+  document.getElementById("metricSelect").addEventListener("change", updateDashboard);
+
+  // 初始加载
+  setLang("zh");
+  updateDashboard();
+</script>
+</body>
+</html>
